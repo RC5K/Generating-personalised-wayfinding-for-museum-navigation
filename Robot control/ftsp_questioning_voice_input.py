@@ -118,7 +118,7 @@ def find_direction(road_network,current_vertex,next_vertex):
                 else:
                     current_vertex = "none"
 
-def instructions_printer(start_location,path,road_network,instruct_type,tts):
+def instructions_printer(start_location,path,road_network,instruct_type,tts,easy_access):
     full_path=path_filler(road_network,path)
     prev_used_stairs = False
     #for each room in the turning point path
@@ -134,12 +134,22 @@ def instructions_printer(start_location,path,road_network,instruct_type,tts):
             if "stairs" in sub_path[room]:
                 end_floor = full_path[full_path.index(sub_path[room])+1]
                 stair_string = full_path[full_path.index(sub_path[room])]
+                if easy_access == "yes":
+                    stair_string = stair_string[:stair_string.index('stairs')] + "lift"
+
                 start_floor =  full_path[full_path.index(sub_path[room])-1]
                 stairs = True
 
         prev_direction = find_direction(road_network,full_path[full_path.index(current)-1],current)
         direction = find_direction(road_network,current,next_room)
-
+        if easy_access == "yes":
+            transport_type = "lift"
+            if "stairs" in current:
+                current = current[:current.index('stairs')] + "lift"
+            if "stairs" in next_room:
+                next_room = next_room[:next_room.index('stairs')] + "lift"
+        else:
+            transport_type = "stairs"
         if instruct_type == "survey":
             if direction == 0:
                 string_direction = "west"
@@ -157,14 +167,14 @@ def instructions_printer(start_location,path,road_network,instruct_type,tts):
             #adjusts name when about to use stairs
             if prev_used_stairs == False:
                 if 'floor' in current:
-                    current = current[:current.index('floor')] + "stairs"
+                    current = current[:current.index('floor')] + transport_type
                 if 'floor' in next_room:
-                    next_room = next_room[:next_room.index('floor')] + "stairs"
+                    next_room = next_room[:next_room.index('floor')] + transport_type
             else:
                 prev_used_stairs = False
             tts.say(str("Face " + string_direction + " at " + current))
             if stairs:
-                tts.say(str("Go " + string_stair_direction + " the stairs to floor" +  end_floor[end_floor.rindex(' '):]))
+                tts.say(str("Go " + string_stair_direction + " the "+ transport_type+ " to floor" +  end_floor[end_floor.rindex(' '):]))
                 prev_used_stairs = True
             else:
                 tts.say(str("Go straight until you reach " + next_room))
@@ -176,9 +186,9 @@ def instructions_printer(start_location,path,road_network,instruct_type,tts):
                     #adjusts name when about to use stairs
                     if prev_used_stairs == False:
                         if 'floor' in current:
-                            current = current[:current.index('floor')] + "stairs"
+                            current = current[:current.index('floor')] + transport_type
                         if 'floor' in next_room:
-                            next_room = next_room[:next_room.index('floor')] + "stairs"
+                            next_room = next_room[:next_room.index('floor')] + transport_type
                     else:
                         prev_used_stairs = False
                     tts.say(str("Go straight until you reach " + stair_string))
@@ -186,11 +196,11 @@ def instructions_printer(start_location,path,road_network,instruct_type,tts):
                         string_direction = "down"
                     else:
                         string_direction = "up"
-                    tts.say(str("Go " + string_direction + " the stairs to floor" +  end_floor[end_floor.rindex(' '):]))
+                    tts.say(str("Go " + string_direction + " the " + transport_type +" to floor" +  end_floor[end_floor.rindex(' '):]))
                     prev_used_stairs = True
                 else:
                     if 'floor' in next_room:
-                        next_room = next_room[:next_room.index("floor")] + "stairs"
+                        next_room = next_room[:next_room.index("floor")] + transport_type
                     tts.say(str("Go straight until you reach " + next_room))
             else:
                 change_direction = 0
@@ -215,14 +225,14 @@ def instructions_printer(start_location,path,road_network,instruct_type,tts):
                 #adjusts name when about to use stairs
                 if prev_used_stairs == False:
                     if 'floor' in current:
-                        current = current[:current.index('floor')] + "stairs"
+                        current = current[:current.index('floor')] + transport_type
                     if 'floor' in next_room:
-                        next_room = next_room[:next_room.index('floor')] + "stairs"
+                        next_room = next_room[:next_room.index('floor')] + transport_type
                 else:
                     prev_used_stairs = False
                 tts.say(str("Turn " + string_direction + " at " + current))
                 if stairs:
-                    tts.say(str("Go " + string_stair_direction + " the stairs to floor" +  end_floor[end_floor.rindex(' '):]))
+                    tts.say(str("Go " + string_stair_direction + " the "+ transport_type + " to floor" +  end_floor[end_floor.rindex(' '):]))
                     prev_used_stairs = True
                 else:
                     tts.say(str("Go straight until you reach " + next_room))
@@ -312,6 +322,7 @@ def find_room_input(mic,recogniser,tts):
                                 condition = False
                                 is_question = False
                     #if the input is a question
+                    question_index = None
                     if is_question:
                         target_list = words[len(questions[questions.index(question)]):]
                         target = ""
@@ -524,6 +535,6 @@ def main():
         if path == "failed":
             tts.say("Path not possible. Please try again")
         else:
-            instructions_printer(start,path,road_network,instruct_type,tts)
+            instructions_printer(start,path,road_network,instruct_type,tts,easy_access)
 
 main()
